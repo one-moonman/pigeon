@@ -1,12 +1,12 @@
-import PageLayout from "../components/Layouts/PageLayout";
-import { api } from "../utils/api";
-import ContactCard from "../components/Cards/ContactCard";
-import useAuthenticated from "../hooks/useAuthenticated";
-import CreateContactModal from "../components/Modals/ContactModals/CreateContactModal";
-import { TRPCRefetchContextProvider } from "../context/TRPCRefetchContext";
-import LoadingScreen from "../components/LoadingScreen";
 import { SimpleGrid } from "@mantine/core";
 import { Contact } from "@prisma/client";
+import ContactCard from "../../components/Cards/ContactCard";
+import PageLayout from "../../components/Layouts/PageLayout";
+import LoadingScreen from "../../components/LoadingScreen";
+import CreateContactModal from "../../components/Modals/ContactModals/CreateContactModal";
+import { TRPCRefetchContextProvider } from "../../context/TRPCRefetchContext";
+import useAuthenticated from "../../hooks/useAuthenticated";
+import { api } from "../../utils/api";
 
 export default function ContactsPage() {
     const { status } = useAuthenticated();

@@ -1,17 +1,17 @@
 import { useRouter } from "next/router";
-import PageLayout from "../../components/Layouts/PageLayout";
-import useAuthenticated from "../../hooks/useAuthenticated";
-import { api } from "../../utils/api";
+import PageLayout from "../../../components/Layouts/PageLayout";
+import useAuthenticated from "../../../hooks/useAuthenticated";
+import { api } from "../../../utils/api";
 import Error from "next/error";
-import LoadingScreen from "../../components/LoadingScreen";
+import LoadingScreen from "../../../components/LoadingScreen";
 import { Flex, Group, Center, Text, Table, Chip, Container, TextInput } from "@mantine/core";
 import { MdCalendarToday, MdGroup, MdSearch } from "react-icons/md";
-import TrashButton from "../../components/Buttons/Action/TrashButton";
-import StatusBadge from "../../components/StatusBadge";
+import TrashButton from "../../../components/Buttons/Action/TrashButton";
+import StatusBadge from "../../../components/StatusBadge";
 import { RxCross2 } from "react-icons/rx"
-import EventCard from "../../components/Cards/EventCard";
-import EditAttendeesModal from "../../components/Modals/AttendeeModals/EditAttendeesModal";
-import { TRPCRefetchContextProvider } from "../../context/TRPCRefetchContext";
+import EventCard from "../../../components/Cards/EventCard";
+import EditAttendeesModal from "../../../components/Modals/AttendeeModals/EditAttendeesModal";
+import { TRPCRefetchContextProvider } from "../../../context/TRPCRefetchContext";
 import { useSetState } from "@mantine/hooks";
 
 type StatusType = 'YES' | 'NO' | 'MAYBE' | 'UNKNOWN';
@@ -19,18 +19,12 @@ const StatusList: StatusType[] = ['YES', 'NO', 'MAYBE', 'UNKNOWN'];
 
 export default function EventPage() {
     const { status } = useAuthenticated();
-    const { query: { eventId } } = useRouter();
-    const id = eventId as string;
-    const query = api.event.getByIdIncludingAttendees.useQuery(id, {
+    const { query: { id } } = useRouter();
+    const query = api.event.getByIdIncludingAttendees.useQuery(id as string, {
         enabled: status === "authenticated" && !!id,
         retry: false,
     });
 
-    if (query.isError && query.error.data) return <Error
-        statusCode={query.error.data.httpStatus || 500}
-        title={query.error.message}
-    />
-    if (query.isLoading || !query.data) return <LoadingScreen />;
 
     const [filter, setFilter] = useSetState<{
         collection: StatusType | 'ALL',
@@ -39,6 +33,12 @@ export default function EventPage() {
         collection: 'ALL',
         name: ''
     })
+
+    if (query.isError && query.error.data) return <Error
+        statusCode={query.error.data.httpStatus || 500}
+        title={query.error.message}
+    />
+    if (query.isLoading || !query.data) return <LoadingScreen />;
 
     const filteredAttendees = (attendees => {
         let filtered = attendees;
@@ -80,7 +80,7 @@ export default function EventPage() {
                             </Group>
                             <Center>
                                 <EditAttendeesModal
-                                    eventId={id}
+                                    eventId={id as string}
                                     contactIds={query.data.attendees.map(attendee => attendee.contactId)}
                                 />
                             </Center>

@@ -1,19 +1,17 @@
-import { Flex, Modal, Group, Button, Text } from "@mantine/core";
+import { Modal, Button, Group } from "@mantine/core";
 import { useForm, zodResolver } from "@mantine/form";
 import { useToggle } from "@mantine/hooks";
-import { FaExclamationCircle } from "react-icons/fa";
 import { useContextValue } from "../../../context/TRPCRefetchContext";
 import { api } from "../../../utils/api";
 import EditButton from "../../Buttons/Action/EditButton";
-import TrashButton from "../../Buttons/Action/TrashButton";
-import MultiSelectContacts from "../../Inputs/MutiSelectContacts";
 import { z } from "zod";
 import { Attendee } from "@prisma/client";
+import SelectContactsInput from "../../Inputs/SelectContactsInput";
 
+// make this into page cause modals suck
 const EditAttendeesModal: React.FC<{ eventId: string, contactIds: string[] }> = props => {
     const { refetch } = useContextValue();
     const [isToggled, toggle] = useToggle();
-    const contactsQuery = api.contact.getAll.useQuery();
     const addMutation = api.attendee.add.useMutation();
     const removeMutation = api.attendee.remove.useMutation();
 
@@ -24,8 +22,8 @@ const EditAttendeesModal: React.FC<{ eventId: string, contactIds: string[] }> = 
             })
         ),
         initialValues: {
-            contactIds: [...props.contactIds]
-        } as { contactIds: string[] }
+            contactIds: [...props.contactIds],
+        }
     })
 
     const handleSubmit = form.onSubmit(async ({ contactIds: formValues }) => {
@@ -33,7 +31,6 @@ const EditAttendeesModal: React.FC<{ eventId: string, contactIds: string[] }> = 
         const toRemove = props.contactIds.filter(attendee => !formValues.includes(attendee));
         // the ones included in the updated but not the in the original are to be added
         const toAdd = formValues.filter(attendee => !props.contactIds.includes(attendee));
-
         // start all remove and add mutations at the same time
         const mutations: Promise<Attendee>[] = [];
         if (toRemove.length > 0) toRemove
@@ -51,46 +48,50 @@ const EditAttendeesModal: React.FC<{ eventId: string, contactIds: string[] }> = 
                 })
             ))
         await Promise.all(mutations);
-
-        // return callback chain because all other mutations do so onSuccess
+        // return callback chain just like all other mutations do so onSuccess
         return refetch().then(() => toggle()).then(form.reset);
     });
 
-    if (!contactsQuery.data) return <>
-        <p>Wait</p>
-    </>
     return <>
-        <EditButton size={50} variant="outline" onClick={() => toggle()} />
-        <Modal
-            centered
+        <Modal.Root
             fullScreen
+            centered
             opened={isToggled}
             onClose={() => toggle()}
+            size="xl"
         >
-            <form onSubmit={handleSubmit}>
-                <MultiSelectContacts
-                    {...form.getInputProps('contactIds')}
-                    data={contactsQuery.data.map(c => ({ value: c.id, description: c.email, label: c.name }))}
-                />
-                <Button
-                    type="submit"
-                    fullWidth
-                    variant="outline"
-                    color="dark"
-                >
-                    Edit
-                </Button>
-                <Button
-                    fullWidth
-                    variant="default"
-                    onClick={() => {
-                        toggle();
-                    }}
-                >
-                    Cancel
-                </Button>
-            </form>
-        </Modal>
+            <Modal.Overlay />
+            <Modal.Content>
+                <Modal.Body>
+                    <form onSubmit={handleSubmit}>
+                        <SelectContactsInput
+                            {...form.getInputProps('contactIds')}
+                            onChange={(index, id) => index >= 0 ? form.removeListItem('contactIds', index) : form.insertListItem(`contactIds`, id)}
+                        />
+                        <Group grow>
+                            <Button
+                                type="submit"
+                                fullWidth
+                                variant="outline"
+                                color="dark"
+                            >
+                                Edit
+                            </Button>
+                            <Button
+                                fullWidth
+                                variant="default"
+                                onClick={() => {
+                                    toggle();
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                        </Group>
+                    </form>
+                </Modal.Body>
+            </Modal.Content>
+        </Modal.Root>
+        <EditButton size={50} variant="outline" onClick={() => toggle()} />
     </>
 }
 
